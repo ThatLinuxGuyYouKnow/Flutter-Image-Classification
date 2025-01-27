@@ -20,8 +20,6 @@ Future<List<OrtValue?>?> inferFromImage(PlatformFile imageToBeInferred) async {
   }
 
   // Step 3: Preprocess the image
-  // TODO: Implement image preprocessing (e.g., resize, normalize, convert to tensor)
-  // For now, assume `imageData` is a preprocessed tensor
   final imageData = await preprocessImage(imageToBeInferred);
 
   // Step 4: Prepare the input tensor
@@ -55,6 +53,5 @@ Future<List<OrtValue?>?> inferFromImage(PlatformFile imageToBeInferred) async {
   }
 
   // Step 6: Return the outputs (caller is responsible for releasing them)
-  print(await outputs.toString());
   return outputs;
 }
