@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:object_detection_flutter/inferImage.dart';
+import 'package:object_detection_flutter/loadLabel.dart';
 import 'package:object_detection_flutter/postProcessLogits.dart';
 import 'package:object_detection_flutter/preProcessImage.dart';
 import 'package:onnxruntime/onnxruntime.dart';
@@ -141,7 +142,7 @@ class MainScreenState extends State<MainScreen> {
         // Apply softmax and get predictions
         final probs = softmax(outputList);
         final predictedIndex = argmax(probs);
-
+        getPredictedLabel(predictedIndex);
         setState(() {
           predictedClass = 'Class $predictedIndex';
           probabilities = probs;
@@ -165,59 +166,67 @@ class MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text('Image Classification'),
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 100),
-          GestureDetector(
-            onTap: _pickFile,
-            child: Container(
-              width: double.infinity,
-              height: 60,
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: isProcessing ? Colors.grey : Colors.amberAccent,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isProcessing
-                            ? 'Processing...'
-                            : 'Upload Image for Inference',
-                        style: TextStyle(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 100),
+            imageToBeInferred != null
+                ? Image(
+                    image: AssetImage(imageToBeInferred.toString()),
+                  )
+                : SizedBox.shrink(),
+            const SizedBox(height: 100),
+            GestureDetector(
+              onTap: _pickFile,
+              child: Container(
+                width: double.infinity,
+                height: 60,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: isProcessing ? Colors.grey : Colors.amberAccent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isProcessing
+                              ? 'Processing...'
+                              : 'Upload Image for Inference',
+                          style: TextStyle(
+                            color: isProcessing ? Colors.white : Colors.black,
+                          ),
+                        ),
+                        Icon(
+                          isProcessing ? Icons.hourglass_empty : Icons.upload,
                           color: isProcessing ? Colors.white : Colors.black,
                         ),
-                      ),
-                      Icon(
-                        isProcessing ? Icons.hourglass_empty : Icons.upload,
-                        color: isProcessing ? Colors.white : Colors.black,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (imageToBeInferred != null)
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text('Selected file: ${imageToBeInferred!.name}'),
-            ),
-          if (predictedClass != null)
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text('Predicted class: $predictedClass'),
-            ),
-          if (probabilities != null)
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text('Probabilities: $probabilities'),
-            ),
-        ],
+            if (imageToBeInferred != null)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text('Selected file: ${imageToBeInferred!.name}'),
+              ),
+            if (predictedClass != null)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text('Predicted class: $predictedClass'),
+              ),
+            if (probabilities != null)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text('Probabilities: $probabilities'),
+              ),
+          ],
+        ),
       ),
     );
   }

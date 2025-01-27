@@ -8,7 +8,7 @@ Future<List<String>> loadLabels(String filePath) async {
 
 Future<void> getPredictedLabel(int predictedIndex) async {
   // Load labels
-  List<String> labels = await loadLabels('assets/labels.txt');
+  List<String> labels = await loadLabels('assets/models/labels.txt');
 
   // Check if the predicted index is valid
   if (predictedIndex < 0 || predictedIndex >= labels.length) {
