@@ -141,20 +141,23 @@ class MainScreenState extends State<MainScreen> {
     double cardHeight = screenHeight < 800 ? screenHeight * 0.6 : 400;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        toolbarHeight: 80,
+        toolbarHeight: 40,
         backgroundColor: Colors.white,
-        title: Text(
-          'Image Classifier',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: screenWidth < 600 ? 24 : 30,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        title: Text('Image Classifier',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: screenWidth < 600 ? 24 : 30,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            )),
+        bottom: PreferredSize(
+          child: Divider(
+            color: Colors.grey,
           ),
+          preferredSize: Size.fromHeight(40),
         ),
-        centerTitle: true,
       ),
       body: Center(
         child: SingleChildScrollView(
