@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:object_detection_flutter/inferImage.dart';
 import 'package:object_detection_flutter/loadLabel.dart';
 import 'package:object_detection_flutter/postProcessLogits.dart';
@@ -8,6 +9,7 @@ import 'package:onnxruntime/onnxruntime.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
   @override
   State<MainScreen> createState() => MainScreenState();
 }
@@ -18,7 +20,6 @@ class MainScreenState extends State<MainScreen> {
   List<double>? probabilities;
   bool isProcessing = false;
 
-  // Custom error handling method
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -37,13 +38,11 @@ class MainScreenState extends State<MainScreen> {
     );
   }
 
-  // Validate file type
   bool _isValidImageFile(String fileName) {
     final validExtensions = ['.jpg', '.jpeg', '.png', '.bmp'];
     return validExtensions.any((ext) => fileName.toLowerCase().endsWith(ext));
   }
 
-  // File size validation (max 10MB)
   bool _isValidFileSize(int fileSize) {
     const maxSize = 10 * 1024 * 1024; // 10MB in bytes
     return fileSize <= maxSize;
@@ -60,7 +59,6 @@ class MainScreenState extends State<MainScreen> {
     });
 
     try {
-      // Configure file picker for images only
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'bmp'],
@@ -73,7 +71,6 @@ class MainScreenState extends State<MainScreen> {
 
       final file = result.files.first;
 
-      // Validate file
       if (!_isValidImageFile(file.name)) {
         _showError('Please select a valid image file (JPG, PNG, or BMP).');
         return;
@@ -97,7 +94,6 @@ class MainScreenState extends State<MainScreen> {
         ),
       );
 
-      // Run inference
       final outputs = await inferFromImage(file);
 
       if (outputs == null || outputs.isEmpty) {
@@ -114,18 +110,14 @@ class MainScreenState extends State<MainScreen> {
       try {
         final rawOutput = outputTensor.value;
 
-        // Handle 2D output tensor (shape [1, num_classes])
         List<double> outputList;
         if (rawOutput is List<List<double>>) {
-          // Take first row since shape is [1, num_classes]
           outputList = rawOutput[0];
         } else if (rawOutput is List<List>) {
-          // Convert nested list elements to double
           outputList = rawOutput[0]
               .map((e) => e is double ? e : double.parse(e.toString()))
               .toList();
         } else if (rawOutput is List) {
-          // Handle case where output might be flattened
           outputList = rawOutput
               .map((e) => e is double ? e : double.parse(e.toString()))
               .toList();
@@ -134,23 +126,16 @@ class MainScreenState extends State<MainScreen> {
               'Unexpected output format: ${rawOutput.runtimeType}');
         }
 
-        // Add debug prints
-        print('Raw output type: ${rawOutput.runtimeType}');
-        print('Processed output type: ${outputList.runtimeType}');
-        print('Output shape: ${outputList.length}');
-
-        // Apply softmax and get predictions
         final probs = softmax(outputList);
         final predictedIndex = argmax(probs);
-        getPredictedLabel(predictedIndex);
+
+        String labelText = await getPredictedLabel(predictedIndex) ?? '';
         setState(() {
-          predictedClass = 'Class $predictedIndex';
+          predictedClass = labelText;
           probabilities = probs;
         });
       } catch (e) {
         print('Debug - Error details: $e');
-        print('Debug - Raw output type: ${outputTensor.value.runtimeType}');
-        print('Debug - Raw output: ${outputTensor.value}');
         _showError('Error processing model output: ${e.toString()}');
       }
     } finally {
@@ -160,72 +145,102 @@ class MainScreenState extends State<MainScreen> {
     }
   }
 
+  void _reset() {
+    setState(() {
+      imageToBeInferred = null;
+      predictedClass = null;
+      probabilities = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Image Classification'),
+        toolbarHeight: 80,
+        backgroundColor: Colors.greenAccent,
+        title: Text('Image Classification',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            )),
+        titleSpacing: 20,
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 100),
-            imageToBeInferred != null
-                ? Image(
-                    image: AssetImage(imageToBeInferred.toString()),
-                  )
-                : SizedBox.shrink(),
-            const SizedBox(height: 100),
-            GestureDetector(
-              onTap: _pickFile,
-              child: Container(
-                width: double.infinity,
-                height: 60,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: isProcessing ? Colors.grey : Colors.amberAccent,
-                  borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              if (imageToBeInferred != null && imageToBeInferred!.bytes != null)
+                Image.memory(
+                  imageToBeInferred!.bytes!,
+                  height: 200,
+                  fit: BoxFit.cover,
                 ),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isProcessing
-                              ? 'Processing...'
-                              : 'Upload Image for Inference',
-                          style: TextStyle(
-                            color: isProcessing ? Colors.white : Colors.black,
-                          ),
+              const SizedBox(height: 20),
+              if (predictedClass != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Predicted Class: $predictedClass',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        Icon(
-                          isProcessing ? Icons.hourglass_empty : Icons.upload,
-                          color: isProcessing ? Colors.white : Colors.black,
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: _reset,
+                        child: const Text('Try Another Image'),
+                      ),
+                    ],
+                  ),
+                ),
+              if (predictedClass == null)
+                GestureDetector(
+                  onTap: _pickFile,
+                  child: Container(
+                    width: double.infinity,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: isProcessing ? Colors.grey : Colors.greenAccent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isProcessing
+                                  ? 'Processing...'
+                                  : 'Upload Image for Inference',
+                              style:
+                                  TextStyle(fontSize: 15, color: Colors.white),
+                            ),
+                            Icon(
+                                isProcessing
+                                    ? Icons.hourglass_empty
+                                    : Icons.upload,
+                                color: Colors.white),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            if (imageToBeInferred != null)
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text('Selected file: ${imageToBeInferred!.name}'),
-              ),
-            if (predictedClass != null)
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text('Predicted class: $predictedClass'),
-              ),
-            if (probabilities != null)
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text('Probabilities: $probabilities'),
-              ),
-          ],
+              if (imageToBeInferred != null)
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text('Selected file: ${imageToBeInferred!.name}'),
+                ),
+            ],
+          ),
         ),
       ),
     );

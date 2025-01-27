@@ -6,17 +6,17 @@ Future<List<String>> loadLabels(String filePath) async {
   return lines; // Each line corresponds to a class label
 }
 
-Future<void> getPredictedLabel(int predictedIndex) async {
+Future<String>? getPredictedLabel(int predictedIndex) async {
   // Load labels
   List<String> labels = await loadLabels('assets/models/labels.txt');
 
   // Check if the predicted index is valid
   if (predictedIndex < 0 || predictedIndex >= labels.length) {
     print('Invalid class index: $predictedIndex');
-    return;
   }
 
   // Get the corresponding label
   String label = labels[predictedIndex];
   print('Predicted Label: $label');
+  return label;
 }
