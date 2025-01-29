@@ -61,5 +61,7 @@ flutter run
 * Supported formats: Only .jpg, .jpeg, .png, and .bmp files are accepted
 * Device compatibility: Requires devices with ONNX Runtime compatibility
 
+[!] Labels Txt is currently minimized during a production  build
+
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
